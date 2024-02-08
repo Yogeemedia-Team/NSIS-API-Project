@@ -9,6 +9,7 @@ use App\Traits\ResponseTrait;
 use Illuminate\Http\JsonResponse;
 use App\Models\UserActivity;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
 
 
 
@@ -38,10 +39,30 @@ class StudentController extends Controller
     public function store(StudentCreateRequest $request): JsonResponse
     {
         try {
+            // Validate the incoming request data
+            $validatedData = Validator::make($request->all(),[
+                'sd_admission_no' => 'required|string|unique:student_service.student_details,sd_admission_no',
+                'sd_email_address' => 'required|email|unique:student_service.student_details,sd_email_address',
+            ], 
+            [
+                'sd_admission_no.required' => 'The admission number is required.',
+                'sd_admission_no.string' => 'The admission number must be a string.',
+                
+                'sd_email_address.required' => 'The email address is required.',
+                'sd_email_address.email' => 'The email address must be a valid email format.',
+                'sd_email_address.unique' => 'The email address has already been taken.',
+                'sd_admission_no.unique' => 'The admission no has already been taken.',
+            ]);
+            if($validatedData->fails()){
+                return $this->responseError("validation_error", $validatedData->errors()->first(), 400);
+            }
+            // Create the student using the validated data
             return $this->responseSuccess($this->studentRepository->create($request->all()), 'User created successfully.');
-        } catch (Exception $exception) {
+        }catch (Exception $exception) {
+            // Handle other exceptions
             return $this->responseError([], $exception->getMessage(), $exception->getCode());
         }
+       
     }
 
  

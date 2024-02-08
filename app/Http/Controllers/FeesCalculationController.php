@@ -67,6 +67,19 @@ class FeesCalculationController extends Controller
             }
         }
       
+        public function invoice_generate(Request $request): JsonResponse
+        {
+            
+            try {
+                return $this->responseSuccess(
+                    $this->feescalculationRepository->invoice_generate(),
+                    'User all payment fetch successfully.'
+                );
+            } catch (Exception $exception) {
+                return $this->responseError([], $exception->getMessage(), $exception->getCode());
+            }
+        }
+      
 
     
 }

@@ -12,6 +12,9 @@ use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
+use Illuminate\Http\Request;
+use Illuminate\Http\Response;
+
 class FeesCalculationRepository implements FeesCalculationInterface {
     public function monthlyFee()
     {
@@ -333,37 +336,348 @@ public function all_user_pay(array $data) {
     return  $formattedData;
 }
 
-
-
     public function invoice_generate()
         {
             $currentDate = Carbon::now();
             $dueDate = $currentDate->copy()->addMonth();
 
-            $uniqueInvoices = AccountPayable::where('status', 0)
+            $uniqueInvoices = AccountPayable::whereIn('status', [0, 2])
                 ->select('invoice_number', DB::raw('SUM(amount) as amount'),'admission_no')
                 ->groupBy('invoice_number','admission_no')
                 ->get();
 
             foreach ($uniqueInvoices as $uniqueInvoice) {
+
+                //get student total due and details of the studen extr payments
+               $studentData =  StudentDetail::select('id','sd_total_due', 'sd_extra_pay', 'sd_payment_id' )
+                ->where('sd_admission_no', $uniqueInvoice->admission_no)
+                ->first();
+                $studentPayment = StudentPayment::where('payment_id', $studentData->sd_payment_id)->first();
+                $exsistingInvoiceData =  Invoice::where('invoice_number' , $uniqueInvoice->invoice_number)->first();
+
+                $totalPaid = 0;
+                $totalDue = 0;
+                $status = 0;
+                $newSdTotalDue = 0 ;
+                $currentTotalOutstanding = $studentData->sd_total_due;
+
+                if($exsistingInvoiceData && $exsistingInvoiceData->status == 2){ // if status is patial then total pain logic will defernt
+
+                    if($studentData != null && $studentData->sd_extra_pay){
+                        //if total due value (extra payment value) equal to invoice amount,  invoive will automatically settle down
+                            if(($exsistingInvoiceData->total_due + $studentData->sd_total_due) == 0){
+    
+                                $totalPaid = $uniqueInvoice->amount;
+                                $totalDue = 0;
+                                $status = 1;
+                                $newSdTotalDue =  ($studentData->sd_total_due +  $exsistingInvoiceData->total_due);
+    
+                                //update student payment table with adding this invoice number
+                                $this->update_invoice_id($studentData->sd_payment_id,$uniqueInvoice->invoice_number); 
+    
+                                // update invoice number when invoice automatically payied
+                                AccountPayable::where('invoice_number', $uniqueInvoice->invoice_number)->update(['status' => 1]);
+    
+                                //update student deatil page 
+                                $studentData->sd_total_due = 0; // Set sd_total_due to 0
+                                $studentData->sd_extra_pay = false; // Set sd_extra_pay to false
+                                $studentData->sd_payment_id  = "";
+                                $studentData->save(); // Save the changes
+    
+                                
+    
+                            }else if(($exsistingInvoiceData->total_due + $studentData->sd_total_due)  < 0 ){
+                                //fully paid but  have some extra amount for next invoice
+                                $totalPaid = $uniqueInvoice->amount;
+                                $totalDue = 0;
+                                $status = 1;
+                                $newSdTotalDue =  ($studentData->sd_total_due +  $exsistingInvoiceData->total_due);
+                                //update student payment table with adding this invoice number
+                                $this->update_invoice_id($studentData->sd_payment_id,$uniqueInvoice->invoice_number); 
+    
+                                // update invoice number when invoice automatically payied
+                                AccountPayable::where('invoice_number', $uniqueInvoice->invoice_number)->update(['status' => 1]);
+    
+                                //update student deatil page 
+                                $studentData->sd_total_due = $exsistingInvoiceData->total_due + $studentData->sd_total_due; // Set sd_total_due to 0
+                                $studentData->sd_extra_pay = true; // Set sd_extra_pay to false
+                                $studentData->save(); // Save the changes
+                                  
+                                //update student payment table with adding this invoice number
+                            }else{
+                                //patiolly paid records
+                                $totalPaid = ($exsistingInvoiceData->total_paid + ($studentData->sd_total_due * -1 ));
+                                $totalDue = (($uniqueInvoice->amount + $studentData->sd_total_due) - $exsistingInvoiceData->total_paid);
+                                $status = 2;
+                                
+                                $newSdTotalDue =  ($studentData->sd_total_due + $exsistingInvoiceData->total_due);
+                                //update student payment table with adding this invoice number
+                                $this->update_invoice_id($studentData->sd_payment_id,$uniqueInvoice->invoice_number); 
+    
+                                 //update student deatil page 
+                                $studentData->sd_total_due = 0; // Set sd_total_due to 0
+                                $studentData->sd_extra_pay = false; // Set sd_extra_pay to false
+                                $studentData->sd_payment_id  = "";
+                                $studentData->save(); // Save the changes
+                            }
+                    }else{
+                      
+                         //patiolly paid records
+                         $totalPaid = $exsistingInvoiceData->total_paid;
+                         $totalDue = $exsistingInvoiceData->total_due;
+                         $status = $exsistingInvoiceData->status;
+                         
+                         //update student deatil page 
+                         $studentData->sd_total_due =  ($studentData->sd_total_due); //add total due with current invoice ammount
+                         $studentData->sd_extra_pay = false; // Set sd_extra_pay to false
+                         $studentData->save(); // Save the changes
+                         $newSdTotalDue =   $exsistingInvoiceData->new_total_due;
+                         $currentTotalOutstanding =  $exsistingInvoiceData->current_total_outstanding;
+                    }
+                }else if($studentData != null && $studentData->sd_extra_pay){
+                    //if total due value (extra payment value) equal to invoice amount,  invoive will automatically settle down
+                        if(($uniqueInvoice->amount + $studentData->sd_total_due) == 0){
+
+                            $totalPaid = $uniqueInvoice->amount;
+                            $totalDue = 0;
+                            $status = 1;
+                            $newSdTotalDue =  ($studentData->sd_total_due +  $uniqueInvoice->amount);
+
+                            //update student payment table with adding this invoice number
+                            $this->update_invoice_id($studentData->sd_payment_id,$uniqueInvoice->invoice_number); 
+
+                            // update invoice number when invoice automatically payied
+                            AccountPayable::where('invoice_number', $uniqueInvoice->invoice_number)->update(['status' => 1]);
+
+                            //update student deatil page 
+                            $studentData->sd_total_due = 0; // Set sd_total_due to 0
+                            $studentData->sd_extra_pay = false; // Set sd_extra_pay to false
+                            $studentData->sd_payment_id  = "";
+                            $studentData->save(); // Save the changes
+
+                            
+
+                        }else if(($uniqueInvoice->amount + $studentData->sd_total_due)  < 0 ){
+                            //fully paid but  have some extra amount for next invoice
+                            $totalPaid = $uniqueInvoice->amount;
+                            $totalDue = 0;
+                            $status = 1;
+                            $newSdTotalDue =  ($studentData->sd_total_due +  $uniqueInvoice->amount);
+                            //update student payment table with adding this invoice number
+                            $this->update_invoice_id($studentData->sd_payment_id,$uniqueInvoice->invoice_number); 
+
+                            // update invoice number when invoice automatically payied
+                            AccountPayable::where('invoice_number', $uniqueInvoice->invoice_number)->update(['status' => 1]);
+
+                            //update student deatil page 
+                            $studentData->sd_total_due =$uniqueInvoice->amount + $studentData->sd_total_due; // Set sd_total_due to 0
+                            $studentData->sd_extra_pay = true; // Set sd_extra_pay to false
+                            $studentData->save(); // Save the changes
+                              
+                            //update student payment table with adding this invoice number
+                        }else{
+                            //patiolly paid records
+                            $totalPaid = ($studentData->sd_total_due * -1 );
+                            $totalDue = $uniqueInvoice->amount + $studentData->sd_total_due;
+                            $status = 2;
+                            
+                            $newSdTotalDue =  ($studentData->sd_total_due + $uniqueInvoice->amount);
+                            //update student payment table with adding this invoice number
+                            $this->update_invoice_id($studentData->sd_payment_id,$uniqueInvoice->invoice_number); 
+
+                             //update student deatil page 
+                            $studentData->sd_total_due = 0; // Set sd_total_due to 0
+                            $studentData->sd_extra_pay = false; // Set sd_extra_pay to false
+                            $studentData->sd_payment_id  = "";
+                            $studentData->save(); // Save the changes
+                        }
+                }else{
+                     //update student deatil page 
+                     $studentData->sd_total_due =  ($studentData->sd_total_due + $uniqueInvoice->amount); //add total due with current invoice ammount
+                     $studentData->sd_extra_pay = false; // Set sd_extra_pay to false
+                     $studentData->save(); // Save the changes
+                     $newSdTotalDue =  ($studentData->sd_total_due +  $uniqueInvoice->amount);
+                }
+              
                 Invoice::updateOrCreate(
                     ['invoice_number' => $uniqueInvoice->invoice_number],
                     [
                         'admission_no' => $uniqueInvoice->admission_no,
                         'due_date' => $dueDate,
                         'invoice_total' => $uniqueInvoice->amount,
-                        'total_paid' => 0,
-                        'total_due' => 0,
-                        'status' => 0,
+                        'total_paid' =>$totalPaid,
+                        'total_due' => $totalDue,
+                        'status' => $status,
+                        'new_total_due' => $newSdTotalDue, 
+                        'current_total_outstanding' =>$currentTotalOutstanding,
                     ]
                 );
+
             }
 
             return $uniqueInvoices;
     }
 
+    
+    public function update_invoice_id($paymentId,$invoice_number ){
+        $studentPayment = StudentPayment::where('payment_id', $paymentId)->first();
+
+        
+
+        $invoiceIds = json_decode($studentPayment->invoice_id, true) ?? []; // Get existing invoice IDs as array
+        $newInvoiceId = $invoice_number;
+        
+        // Add the new invoice ID if it's not already in the array
+        if (!in_array($newInvoiceId, $invoiceIds)) {
+            $invoiceIds[] = $newInvoiceId;
+            $studentPayment->invoice_id = json_encode($invoiceIds); // Update invoice_id with the new array
+            $studentPayment->save(); // Save the changes
+        }
+    }
+
+    public static function get_account_payables(Request $request) {
+
+        $accountPaybales = AccountPayable::select('*');
+        if($request->filled('admission_no')){
+            $accountPaybales->where('admission_no',$request->adminssion_no);
+        }
+        if($request->filled('sd_year_grade_class_id')){
+            $studentDetails = StudentDetail::where('sd_year_grade_class_id', $request->sd_year_grade_class_id)
+            ->select('sd_admission_no') 
+            ->get();
+
+            $admissionNumbers = $studentDetails->pluck('sd_admission_no')->toArray();
+            $accountPaybales->whereIn('admission_no', $admissionNumbers);
+        
+        }
+
+        if($request->filled('from_date') && $request->filled('to_date')){
+            try {
+                $startDate = Carbon::parse($request->from_date); 
+                $endDate = Carbon::parse($request->to_date);
+
+                $accountPaybales->whereBetween('created_at', [$startDate, $endDate]);
+            } catch (\Throwable $th) {
+             
+            }
+    
+        }else if($request->filled('from_date') ){
+            try {
+                $startDate = Carbon::parse($request->from_date); 
+                $accountPaybales->where('created_at','>=', $startDate);
+            } catch (\Throwable $th) {
+               
+            }
+        }else if($request->filled('from_date') ){
+            try {
+                $endDate = Carbon::parse($request->to_date);
+                $accountPaybales->where('created_at','<=', $endDate);
+            } catch (\Throwable $th) {
+               
+            }
+        }
+        // else{
+        //     $currentDate = Carbon::now();
+
+        //     // First day of the current month
+        //     $firstDayOfMonth = $currentDate->startOfMonth();
+            
+        //     // Last day of the current month
+        //     $lastDayOfMonth = $currentDate->endOfMonth();
+            
+        //     $accountPaybales->whereBetween('created_at', [$firstDayOfMonth, $lastDayOfMonth]);
+             
+        // }
+        $accountPaybalesData = $accountPaybales->get();
+        
+        if (empty( $accountPaybalesData)) {
+            throw new Exception("Account Paybles does not exist.", Response::HTTP_NOT_FOUND);
+        }
+        return  $accountPaybalesData;
+
+        
+    }
+
+    public static function get_all_invoices(Request $request) {
+
+        $invoiceData = Invoice::select(
+            'invoices.*',
+            DB::raw('student_details.sd_name_with_initials'),
+            DB::raw('student_details.sd_address_line1'),
+            DB::raw('student_details.sd_address_line2'),
+            DB::raw('student_details.sd_address_city'),
+            DB::raw('student_details.sd_telephone_mobile'),
+            DB::raw('student_details.sd_email_address'),
+           
+        );
+        if($request->filled('admission_no')){
+            $invoiceData->where('admission_no',$request->adminssion_no);
+        }
+        if($request->filled('sd_year_grade_class_id')){
+           
+            $studentDetails = StudentDetail::where('sd_year_grade_class_id', $request->sd_year_grade_class_id)
+            ->select('sd_admission_no') 
+            ->get();
+            
+            $admissionNumbers = $studentDetails->pluck('sd_admission_no')->toArray();
+            $invoiceData->whereIn('admission_no', $admissionNumbers);
+            
+        }
+
+        if($request->filled('from_date') && $request->filled('to_date')){
+            try {
+                $startDate = Carbon::parse($request->from_date); 
+                $endDate = Carbon::parse($request->to_date);
+
+                $invoiceData->whereBetween('created_at', [$startDate, $endDate]);
+            } catch (\Throwable $th) {
+             
+            }
+    
+        }else if($request->filled('from_date') ){
+            try {
+                $startDate = Carbon::parse($request->from_date); 
+                $invoiceData->where('created_at','>=', $startDate);
+            } catch (\Throwable $th) {
+               
+            }
+        }else if($request->filled('from_date') ){
+            try {
+                $endDate = Carbon::parse($request->to_date);
+                $invoiceData->where('created_at','<=', $endDate);
+            } catch (\Throwable $th) {
+               
+            }
+        }
+        // else{
+        //     $currentDate = Carbon::now();
+
+        //     // First day of the current month
+        //     $firstDayOfMonth = $currentDate->startOfMonth();
+            
+        //     // Last day of the current month
+        //     $lastDayOfMonth = $currentDate->endOfMonth();
+            
+        //     $invoiceData->whereBetween('created_at', [$firstDayOfMonth, $lastDayOfMonth]);
+             
+        // }
+        $invoiceData->join('student_details', 'student_details.sd_admission_no', '=', 'invoices.admission_no');
+        $invoiceDataData = $invoiceData->get();
+        
+        if (empty( $invoiceDataData)) {
+            throw new Exception("Invoice does not exist.", Response::HTTP_NOT_FOUND);
+        }
+
+        foreach ($invoiceDataData as $key => $invoice) {
+            $invoiceDataData[$key]->accountPayables = AccountPayable::where('invoice_number',$invoice->invoice_number)
+            ->get();
+        }
 
 
+        return  $invoiceDataData;
+
+        
+    }
 
 
 

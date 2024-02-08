@@ -16,7 +16,9 @@ class Invoice extends Model
         'invoice_total',
         'total_paid', 
         'total_due',
-        'status'
+        'status',
+        'new_total_due',
+        'current_total_outstanding'
     ];
 
     

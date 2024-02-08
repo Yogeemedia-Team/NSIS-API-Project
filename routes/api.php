@@ -59,7 +59,6 @@ Route::middleware('auth:api')->group(function () {
     // end point of calculation
     // Route::get('/generate_monthly_fee', [FeesAutomateController::class, 'monthly_fee']);
     Route::get('/generate_surcharge_fee', [FeesCalculationController::class, 'surcharge_fee']);
-    // Route::get('/invoice_generate', [FeesAutomateController::class, 'invoice_generate']);
 
     Route::get('/user_single_invoice/{id}', [FeesCalculationController::class, 'user_payments']);
 
@@ -79,7 +78,12 @@ Route::middleware('auth:api')->group(function () {
     //Reports
     Route::get('/student-lists',[UserController::class, 'student_lists']);
     
-  
+    Route::post('/invoice_generate', [FeesCalculationController::class, 'invoice_generate']);
+    
+    Route::get('/account_payables', [InvoiceController::class, 'account_payables']);
+    Route::get('/invoice_details', [InvoiceController::class, 'invoice_details']);
+
+
 
     
     
