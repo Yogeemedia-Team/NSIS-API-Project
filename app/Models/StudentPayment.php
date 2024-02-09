@@ -9,7 +9,7 @@ class StudentPayment extends Model
 {
     use HasFactory;
     protected $connection = 'student_service';
-    protected $fillable = ['invoice_id', 'payment_id', 'admission_no', 'date', 'due_date', 'outstanding_balance', 'total','total_due','status'];
+    protected $fillable = ['invoice_id', 'payment_id', 'admission_no', 'date', 'due_date', 'outstanding_balance', 'total','total_due','status','paid_from'];
 
     public function studentDetailwithInvoice()
     {

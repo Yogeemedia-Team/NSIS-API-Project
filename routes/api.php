@@ -58,7 +58,7 @@ Route::middleware('auth:api')->group(function () {
     Route::apiResource('/enrollments', EnrollmentController::class);
     // end point of calculation
     // Route::get('/generate_monthly_fee', [FeesAutomateController::class, 'monthly_fee']);
-    Route::get('/generate_surcharge_fee', [FeesCalculationController::class, 'surcharge_fee']);
+    // Route::get('/generate_surcharge_fee', [FeesCalculationController::class, 'surcharge_fee']);
 
     Route::get('/user_single_invoice/{id}', [FeesCalculationController::class, 'user_payments']);
 
