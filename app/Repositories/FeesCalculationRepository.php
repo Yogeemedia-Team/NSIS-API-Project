@@ -854,6 +854,42 @@ private function processSurcharges($monthlyPaymentEligibleLists, $dueDate, $dueD
             throw new Exception("Invoice does not exist.", Response::HTTP_NOT_FOUND);
         }
 
+        // foreach ($invoiceDataData as $key => $invoice) {
+        //     $invoiceDataData[$key]->accountPayables = AccountPayable::where('invoice_number',$invoice->invoice_number)
+        //     ->get();
+        // }
+
+
+        return  $invoiceDataData;
+
+        
+    }
+
+    public static function get_invoice_detail(Request $request) {
+
+        $invoiceData = Invoice::select(
+            'invoices.*',
+            DB::raw('student_details.sd_name_with_initials'),
+            DB::raw('student_details.sd_address_line1'),
+            DB::raw('student_details.sd_address_line2'),
+            DB::raw('student_details.sd_address_city'),
+            DB::raw('student_details.sd_telephone_mobile'),
+            DB::raw('student_details.sd_email_address'),
+           
+        );
+        if($request->filled('invoice_number')){
+            $invoiceData->where('invoice_number',$request->invoice_number);
+        }else{
+            throw new Exception("Invoice Number is Required.", Response::HTTP_NOT_FOUND);
+        }
+       
+        $invoiceData->join('student_details', 'student_details.sd_admission_no', '=', 'invoices.admission_no');
+        $invoiceDataData = $invoiceData->get();
+        
+        if (empty( $invoiceDataData)) {
+            throw new Exception("Invoice does not exist.", Response::HTTP_NOT_FOUND);
+        }
+
         foreach ($invoiceDataData as $key => $invoice) {
             $invoiceDataData[$key]->accountPayables = AccountPayable::where('invoice_number',$invoice->invoice_number)
             ->get();

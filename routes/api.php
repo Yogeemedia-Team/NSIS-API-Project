@@ -81,6 +81,7 @@ Route::middleware('auth:api')->group(function () {
     Route::post('/invoice_generate', [FeesCalculationController::class, 'invoice_generate']);
     
     Route::get('/account_payables', [InvoiceController::class, 'account_payables']);
+    Route::get('/invoice_list', [InvoiceController::class, 'invoice_list']);
     Route::get('/invoice_details', [InvoiceController::class, 'invoice_details']);
 
 

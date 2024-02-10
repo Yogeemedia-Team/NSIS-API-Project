@@ -28,9 +28,18 @@ class InvoiceController extends Controller
         }
     }
 
-    public function invoice_details(Request $request): JsonResponse{
+    public function invoice_list(Request $request): JsonResponse{
         try {
             return $this->responseSuccess(FeesCalculationRepository::get_all_invoices($request), 'Invoice List Successfull');
+        } catch (Exception $exception) {
+            return $this->responseError([], $exception->getMessage(), $exception->getCode());
+        }
+    }
+
+    
+    public function invoice_details(Request $request): JsonResponse{
+        try {
+            return $this->responseSuccess(FeesCalculationRepository::get_invoice_detail($request), 'Invoice Detail Received Successfull');
         } catch (Exception $exception) {
             return $this->responseError([], $exception->getMessage(), $exception->getCode());
         }
