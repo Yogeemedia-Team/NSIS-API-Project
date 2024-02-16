@@ -70,6 +70,9 @@ Route::middleware('auth:api')->group(function () {
     
     Route::post('/all_user_payments', [FeesCalculationController::class, 'all_user_payments']);
 
+    Route::get('/payment_detail', [FeesCalculationController::class, 'get_payment_detail']);
+
+
     Route::apiResource('/student_payments', StudentPaymentController::class);
 
     Route::get('/logged_user', [AuthController::class, 'logged_user']);

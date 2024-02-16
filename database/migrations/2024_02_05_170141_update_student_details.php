@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::connection('student_service')->table('student_details', function (Blueprint $table) {
             // Update 'name' column to allow nullable
-            $table->string('sd_academic_status')->default(0)->change();
+            $table->string('sd_academic_status')->default(1)->change();
         });
     }
 
