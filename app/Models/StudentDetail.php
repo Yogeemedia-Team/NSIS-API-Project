@@ -38,7 +38,8 @@ class StudentDetail extends Model
         'sd_no_of_installments',
         'sd_extra_pay', 
         'sd_payment_id',
-        'sd_total_due'
+        'sd_total_due',
+        'sd_promote_started_date'
     ];
 
 

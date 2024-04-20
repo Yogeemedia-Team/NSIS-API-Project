@@ -52,8 +52,10 @@ class FeesCalculationRepository implements FeesCalculationInterface {
 
     private function getMonthlyPaymentEligibleLists()
     {
-        $studentDetails =  StudentDetail::where('sd_academic_status', 1)
-            ->with('yearGradeClass')
+        $studentDetails =  StudentDetail::select('student_details.*','student_monthly_fee.monthly_fee')where('sd_academic_status', 1)
+            ->join('student_monthly_fee', 'student_monthly_fee.student_id', '=', 'student_details.student_id')
+            ->where('student_monthly_fee.status', 1)
+            // ->with('yearGradeClass')
             ->get();
 
             // foreach($studentDetails as $key => $studentDetail){
@@ -183,7 +185,7 @@ private function processSurcharges($monthlyPaymentEligibleLists, $dueDate, $dueD
         AccountPayable::create([
             'invoice_number' => $invoice_number,
             'admission_no' => $monthlyPaymentEligibleList->sd_admission_no,
-            'amount' => $monthlyPaymentEligibleList->yearGradeClass->monthly_fee,
+            'amount' => $monthlyPaymentEligibleList->monthly_fee,
             'type' => 'monthly',
             'eligibility' => $eligibility,
             'due_date' => $dueDate,

@@ -9,6 +9,7 @@ use App\Models\StudentDetail;
 use App\Models\StudentDocument;
 use App\Models\StudentParent;
 use App\Models\StudentSibling;
+use App\Models\StudentMonthlyFee;
 use Illuminate\Contracts\Pagination\Paginator;
 use Illuminate\Http\Response;
 use Illuminate\Support\Str;
@@ -56,9 +57,25 @@ class StudentRepository implements StudentInterface, DBPreparableInterface {
 
     public function create(array $data): ?object 
 {
+
+    $data['sd_promote_started_date'] = now()->format('Y-m-d');
+
     $studentDetail = StudentDetail::create($data);
     $studentParent = StudentParent::create($data);
-    $studentSibling = StudentSibling::create($data);
+   
+    $studentMonthlyFeeData = [
+        'student_id' => $data['student_id'], 
+        'sd_year_grade_class_id' => $data['sd_year_grade_class_id'],
+        'monthly_fee' => $data['monthly_fee'], 
+        'start_from' => now()->format('Y-m-d'), 
+        'status' => 1,
+    ];
+    $studentMonthlyFee =  StudentMonthlyFee::create($studentMonthlyFeeData);
+    // $studentSibling = null;
+    // if( $data['ss_data'] != null){
+        $studentSibling = StudentSibling::create($data);
+    // }
+   
     $studentDocument = StudentDocument::create($data);
 
     // Check if any of the models is null
@@ -78,12 +95,35 @@ class StudentRepository implements StudentInterface, DBPreparableInterface {
 
 public function update(array $data, $studentId): ?object 
 {
+    
     // Fetch existing records
     $studentDetails = StudentDetail::where('student_id',$studentId)->first();
     $studentParents = StudentParent::where('student_id',$studentId)->first();
     $studentSiblings = StudentSibling::where('student_id',$studentId)->first();
     $studentDocuments = StudentDocument::where('student_id',$studentId)->first();
-    
+    $studenMonthlyFee = StudentMonthlyFee::where('student_id',$studentId)->where('status',1)->first();
+    if($data['monthly_fee']){
+        $studentMonthlyFeeData = [
+            'student_id' => $studentId, 
+            'sd_year_grade_class_id' => $data['sd_year_grade_class_id'],
+            'monthly_fee' => $data['monthly_fee'], 
+            'start_from' => now()->format('Y-m-d'), 
+            'status' => 1,
+        ];
+        
+        if($studenMonthlyFee){
+            if($studenMonthlyFee->monthly_fee != $data['monthly_fee']){
+                $studenMonthlyFee->end_from = now()->format('Y-m-d');
+                $studenMonthlyFee->status = 0;
+                $studenMonthlyFee->update();
+
+                StudentMonthlyFee::create($studentMonthlyFeeData);
+            }
+        }else{
+           StudentMonthlyFee::create($studentMonthlyFeeData);
+        }
+
+    }
     
     $studentDetail = StudentDetail::find($studentDetails->id);
     $studentParent = StudentParent::find($studentParents->id);
@@ -107,12 +147,13 @@ public function update(array $data, $studentId): ?object
     $studentParent = StudentParent::find($studentParents->id);
     $studentSibling = StudentSibling::find($studentSiblings->id);
     $studentDocument = StudentDocument::find($studentDocuments->id);
-
+    $studenMonthlyFee = StudentMonthlyFee::where('student_id',$studentId)->where('status',1)->first();
     $collection = collect([
         'studentDetail' => $studentDetail,
         'studentParent' => $studentParent,
         'studentSibling' => $studentSibling,
         'studentDocument' => $studentDocument,
+        'studenMonthlyFee' => $studenMonthlyFee,
     ]);
 
     return $collection;
