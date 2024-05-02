@@ -7,13 +7,17 @@ use App\Interfaces\DBPreparableInterface;
 use App\Models\YearGradeClass;
 use App\Interfaces\YearGradeClassInterface ;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\DB;
 
 
 class YearGradeClassRepository implements YearGradeClassInterface, DBPreparableInterface {
     public function getAll(array $filterData)
     {
         $filter = $this->getFilterData($filterData);
-        $query = YearGradeClass::with('grade', 'class')->get(); 
+        $query = YearGradeClass::with('grade', 'class')
+        // ->selectSub('SELECT COUNT(*) FROM student_service.student_details WHERE student_service.student_details.sd_year_grade_class_id = core_service.year_grade_classes.id', 'student_count')
+        ->get(); 
+    
         // $query = YearGradeClass::orderBy($filter['orderBy'], $filter['order']);
 
         // if (!empty($filter['search'])) {
@@ -23,7 +27,13 @@ class YearGradeClassRepository implements YearGradeClassInterface, DBPreparableI
         //         ->orWhere('title', 'like', $searched);
         //     });
         // }
-        return $query;
+        $results = YearGradeClass::leftJoin(DB::raw('(SELECT sd_year_grade_class_id, COUNT(*) as student_count FROM student_service.student_details GROUP BY sd_year_grade_class_id) as students'), function($join) {
+            $join->on('students.sd_year_grade_class_id', '=', 'core_service.year_grade_classes.id');
+        })
+        ->with('grade', 'class')
+        ->select('core_service.year_grade_classes.*', 'students.student_count')
+        ->get();
+        return $results;
     }
 
     public function getFilterData(array $filterData): array

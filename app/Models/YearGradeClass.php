@@ -17,7 +17,6 @@ class YearGradeClass extends Model
         'master_class_id',
         'monthly_fee',
         'active_status',
-        'Total_number_of_students',
     ];
 
     public function grade()
