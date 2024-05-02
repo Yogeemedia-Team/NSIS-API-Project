@@ -14,9 +14,9 @@ class YearGradeClassRepository implements YearGradeClassInterface, DBPreparableI
     public function getAll(array $filterData)
     {
         $filter = $this->getFilterData($filterData);
-        $query = YearGradeClass::with('grade', 'class')
-        // ->selectSub('SELECT COUNT(*) FROM student_service.student_details WHERE student_service.student_details.sd_year_grade_class_id = core_service.year_grade_classes.id', 'student_count')
-        ->get(); 
+        // $query = YearGradeClass::with('grade', 'class')
+        // // ->selectSub('SELECT COUNT(*) FROM student_service.student_details WHERE student_service.student_details.sd_year_grade_class_id = core_service.year_grade_classes.id', 'student_count')
+        // ->get(); 
     
         // $query = YearGradeClass::orderBy($filter['orderBy'], $filter['order']);
 
