@@ -45,7 +45,8 @@ Route::middleware('auth:api')->group(function () {
     Route::post('/logout', [ProfileController::class,'logout']);
     Route::get('/permissions', [PermissionController::class,'index']);
     Route::post('/promote', [StudentPromoteController::class,'store']);
-    
+    Route::post('/search-student', [StudentController::class,'searchStudentdata']);
+   
     Route::apiResource('/users', UserController::class);
     Route::apiResource('/user_levels', UserLevelController::class);
     Route::apiResource('/user_roles', UserRoleController::class);

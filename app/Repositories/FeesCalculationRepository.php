@@ -52,7 +52,7 @@ class FeesCalculationRepository implements FeesCalculationInterface {
 
     private function getMonthlyPaymentEligibleLists()
     {
-        $studentDetails =  StudentDetail::select('student_details.*','student_monthly_fee.monthly_fee')where('sd_academic_status', 1)
+        $studentDetails =  StudentDetail::select('student_details.*','student_monthly_fee.monthly_fee')->where('sd_academic_status', 1)
             ->join('student_monthly_fee', 'student_monthly_fee.student_id', '=', 'student_details.student_id')
             ->where('student_monthly_fee.status', 1)
             // ->with('yearGradeClass')

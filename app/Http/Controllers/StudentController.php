@@ -34,6 +34,16 @@ class StudentController extends Controller
             return $this->responseError([], $exception->getMessage(), $exception->getCode());
         }
     }
+    
+    
+    public function searchStudentdata(): JsonResponse
+    {
+        try {
+            return $this->responseSuccess($this->studentRepository->searchStudentdata(request()->all()), 'User fetched successfully.');
+        } catch (Exception $exception) {
+            return $this->responseError([], $exception->getMessage(), $exception->getCode());
+        }
+    }
 
   
     public function store(StudentCreateRequest $request): JsonResponse
