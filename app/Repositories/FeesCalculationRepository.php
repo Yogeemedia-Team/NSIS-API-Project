@@ -33,12 +33,13 @@ class FeesCalculationRepository implements FeesCalculationInterface {
             $monthlyPaymentEligibleLists = $this->getMonthlyPaymentEligibleLists();
 
             // Process surcharges and create records
-            $this->processSurcharges($monthlyPaymentEligibleLists, $dueDate, $dueDateThreshold);
+           $data =  $this->processSurcharges($monthlyPaymentEligibleLists, $dueDate, $dueDateThreshold);
 
             // Commit the transaction
             DB::commit();
 
-            return "All records inserted successfully!";
+            return $data;
+            // return "All records inserted successfully!";
         } catch (\Exception $e) {
             // An error occurred, rollback the transaction
             DB::rollBack();
@@ -83,8 +84,16 @@ private function processSurcharges($monthlyPaymentEligibleLists, $dueDate, $dueD
     foreach ($monthlyPaymentEligibleLists as $monthlyPaymentEligibleList) {
         $mainIteration++;
         // Generate a new unique ID and extract substring for invoice number
-        
-        $invoice_number = $this->generateInvoiceNumber(). $mainIteration;
+        $accountPayable = AccountPayable::where('admission_no',$monthlyPaymentEligibleList->sd_admission_no)
+                                ->where('type',"revise surcharge")
+                                ->where('is_invoice_created',0)->first(); 
+        if($accountPayable){
+           
+            $invoice_number = $accountPayable->invoice_number;
+        } else{
+            $invoice_number = $this->generateInvoiceNumber(). $mainIteration;
+        }                       
+       
 
         $surchageEligibilitys = $this->getSurchageEligibilitys($monthlyPaymentEligibleList, $dueDateThreshold);
         $count = $surchageEligibilitys->count();
@@ -798,6 +807,8 @@ private function processSurcharges($monthlyPaymentEligibleLists, $dueDate, $dueD
                         ]
                     );
 
+                    AccountPayable::whereIn('status', [0, 2])->update(['is_invoice_created' => 1]);
+
             }
 
             return $uniqueInvoices;
@@ -1029,18 +1040,49 @@ private function processSurcharges($monthlyPaymentEligibleLists, $dueDate, $dueD
                 'created_by' => Auth::user()->id,
             ]);
 
-            $invoiceData = Invoice::create([
-                    'invoice_number' => $accountPayable->invoice_number, 
-                    'admission_no' => $data['admission_no'],
-                    'due_date' => $dueDate,
-                    'invoice_total' => $data['amount'] * -1,
-                    'total_paid' => 0,
-                    'total_due' => 0,
-                    'status' => 0,
-                    'new_total_due' => 0, 
-                    'current_total_outstanding' => $data['amount'] * -1,
-                ]
-            );
+            // $studentData =  StudentDetail::select('id','sd_total_due', 'sd_extra_pay', 'sd_payment_id' )
+            // ->where('sd_admission_no', $data['admission_no'])
+            // ->first();
+
+            // $invoiceData = Invoice::create([
+            //         'invoice_number' => $accountPayable->invoice_number, 
+            //         'admission_no' => $data['admission_no'],
+            //         'due_date' => $dueDate,
+            //         'invoice_total' => $data['amount'] * -1,
+            //         'total_paid' => 0,
+            //         'total_due' => 0,
+            //         'status' => 1,
+            //         'new_total_due' => 0, 
+            //         'current_total_outstanding' => $studentData->sd_total_due - ($data['amount']),
+            //     ]
+            // );
+
+            // $studentPayment = new StudentPayment();
+            // $paymentId = Str::uuid();
+            // $invoiceNumbers = [$accountPayable->invoice_number];
+
+            // $newSdTotalDue = 0 ;
+                    
+            // // Create a new student payment record for all invoices
+            // $studentPayment->create([
+            //     'payment_id' => $paymentId,
+            //     'invoice_id' => json_encode($invoiceNumbers),
+            //     'admission_no' => $data['admission_no'],
+            //     'date' => now(),
+            //     'due_date' => now(),
+            //     'total_due' =>  $data['amount'] * -1,
+            //     'status' => 1,
+            //     'paid_from'=> "Manual"
+            // ]);
+            // if($studentData->sd_total_due >= ($data['amount']) ){
+            //     $studentData->sd_total_due = $studentData->sd_total_due - ($data['amount']);
+            //     $studentData->save();
+            // }else{
+            //     $studentData->sd_total_due = ($data['amount']) - $studentData->sd_total_due;
+            //     $studentData->sd_extra_pay = true;
+            //     $studentData->save();
+            // }
+
         }else{
             throw new Exception("No any Surcharge available for this admision number", Response::HTTP_NOT_FOUND);
         }

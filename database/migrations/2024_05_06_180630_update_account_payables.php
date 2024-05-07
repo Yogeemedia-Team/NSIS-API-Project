@@ -14,6 +14,7 @@ return new class extends Migration
         Schema::connection('student_service')->table('account_payables', function (Blueprint $table) {
             $table->string('remark')->nullable();
             $table->string('created_by')->nullable();
+            $table->boolean('is_invoice_created')->default(false);
         });
     }
 
