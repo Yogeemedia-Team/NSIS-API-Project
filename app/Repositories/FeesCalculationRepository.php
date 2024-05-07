@@ -1023,7 +1023,15 @@ private function processSurcharges($monthlyPaymentEligibleLists, $dueDate, $dueD
 
         if($checkAvailabilitySercharge->count() > 0){
             $timestamp = time();
-            $invoice_number = $timestamp;
+            $accountPayable = AccountPayable::where('admission_no', $data['admission_no'])
+                                            ->where('type',"revise surcharge")
+                                            ->where('is_invoice_created',0)->first(); 
+            if($accountPayable){
+
+            $invoice_number = $accountPayable->invoice_number;
+            } else{
+            $invoice_number = $timestamp;;
+            }          
 
             $currentDate = Carbon::now();
             $dueDate = $currentDate->copy()->addMonth();
