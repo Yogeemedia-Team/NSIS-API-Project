@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Auth;
 
 class FeesCalculationRepository implements FeesCalculationInterface {
     public function monthlyFee()
@@ -359,8 +360,10 @@ private function processSurcharges($monthlyPaymentEligibleLists, $dueDate, $dueD
                     $current_amount -= $invoice->invoice_total;
                     $invoice->update(['status' =>1,
                         'total_paid'=> $invoice->invoice_total, 
-                        'total_due' => ($current_amount == $invoice->invoice_total) ? 0 :  ($invoice->invoice_total - $current_amount),
-                        'new_total_due' => ($current_amount == $invoice->invoice_total) ? 0 :  ($invoice->invoice_total - $current_amount),
+                        // 'total_due' => ($current_amount == $invoice->invoice_total) ? 0 :  ($invoice->invoice_total - $current_amount),
+                        // 'new_total_due' => ($current_amount == $invoice->invoice_total) ? 0 :  ($invoice->invoice_total - $current_amount),
+                        'total_due' => ($current_amount),
+                        'new_total_due' => ($current_amount),
                         'current_total_outstanding' =>$currentTotalOutstanding
                 
                 ]);
@@ -372,7 +375,8 @@ private function processSurcharges($monthlyPaymentEligibleLists, $dueDate, $dueD
                     AccountPayable::where('invoice_number', $invoice->invoice_number)->update(['status' => 1]);
                     $newSdTotalDue = ($current_amount == $invoice->invoice_total) ? 0 :  ($invoice->invoice_total - $current_amount); 
                      //update student deatil page 
-                    $studentData->sd_total_due = ($current_amount == $invoice->invoice_total) ? 0 :  ($invoice->invoice_total - $current_amount);  // Set sd_total_due to 0
+                    $studentData->sd_total_due = ($current_amount);  // Set sd_total_due to 0
+                    // $studentData->sd_total_due = ($current_amount == $invoice->invoice_total) ? 0 :  ($invoice->invoice_total - $current_amount);  // Set sd_total_due to 0
                     $studentData->sd_extra_pay = ($current_amount == $invoice->invoice_total) ? false : true; // Set sd_extra_pay to false
                     $studentData->sd_payment_id  = ($current_amount == $invoice->invoice_total) ? "" : $paymentId;
                     $studentData->save(); // Save the changes
@@ -777,22 +781,22 @@ private function processSurcharges($monthlyPaymentEligibleLists, $dueDate, $dueD
                      $studentData->sd_total_due =  ($studentData->sd_total_due + $uniqueInvoice->amount); //add total due with current invoice ammount
                      $studentData->sd_extra_pay = false; // Set sd_extra_pay to false
                      $studentData->save(); // Save the changes
-                     $newSdTotalDue =  ($studentData->sd_total_due +  $uniqueInvoice->amount);
+                     $newSdTotalDue =  ($studentData->sd_total_due);
                 }
               
-                Invoice::updateOrCreate(
-                    ['invoice_number' => $uniqueInvoice->invoice_number],
-                    [
-                        'admission_no' => $uniqueInvoice->admission_no,
-                        'due_date' => $dueDate,
-                        'invoice_total' => $uniqueInvoice->amount,
-                        'total_paid' =>$totalPaid,
-                        'total_due' => $totalDue,
-                        'status' => $status,
-                        'new_total_due' => $newSdTotalDue, 
-                        'current_total_outstanding' =>$currentTotalOutstanding,
-                    ]
-                );
+                    Invoice::updateOrCreate(
+                        ['invoice_number' => $uniqueInvoice->invoice_number],
+                        [
+                            'admission_no' => $uniqueInvoice->admission_no,
+                            'due_date' => $dueDate,
+                            'invoice_total' => $uniqueInvoice->amount,
+                            'total_paid' =>$totalPaid,
+                            'total_due' => $totalDue,
+                            'status' => $status,
+                            'new_total_due' => $newSdTotalDue, 
+                            'current_total_outstanding' =>$currentTotalOutstanding,
+                        ]
+                    );
 
             }
 
@@ -997,6 +1001,59 @@ private function processSurcharges($monthlyPaymentEligibleLists, $dueDate, $dueD
         
     }
 
+
+    public static function  reviceSercharge($data): ?object 
+    {
+        $checkAvailabilitySercharge = AccountPayable::where('admission_no', $data['admission_no'])                                         
+                                                    ->where('type', 'surcharge')
+                                                    ->get();
+        $accountPayable = null;
+        $invoiceData = null;
+
+        if($checkAvailabilitySercharge->count() > 0){
+            $timestamp = time();
+            $invoice_number = $timestamp;
+
+            $currentDate = Carbon::now();
+            $dueDate = $currentDate->copy()->addMonth();
+
+            $accountPayable = AccountPayable::create([
+                'invoice_number' => $invoice_number,
+                'admission_no' => $data['admission_no'],
+                'amount' => $data['amount'] * -1,
+                'type' => 'revise surcharge',
+                'eligibility' => 1,
+                'due_date' =>$dueDate, //current date,
+                'status' => 0,
+                'remark' => $data['remark'],
+                'created_by' => Auth::user()->id,
+            ]);
+
+            $invoiceData = Invoice::create([
+                    'invoice_number' => $accountPayable->invoice_number, 
+                    'admission_no' => $data['admission_no'],
+                    'due_date' => $dueDate,
+                    'invoice_total' => $data['amount'] * -1,
+                    'total_paid' => 0,
+                    'total_due' => 0,
+                    'status' => 0,
+                    'new_total_due' => 0, 
+                    'current_total_outstanding' => $data['amount'] * -1,
+                ]
+            );
+        }else{
+            throw new Exception("No any Surcharge available for this admision number", Response::HTTP_NOT_FOUND);
+        }
+
+        
+
+        $collection = collect([
+            'accointPayable' =>$accountPayable,
+            'invoice' => $invoiceData,
+        ]);
+       
+        return $collection;
+    }
 
 
 
