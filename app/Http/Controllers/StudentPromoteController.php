@@ -24,7 +24,7 @@ class StudentPromoteController extends Controller
 
     public function store(StudentPromoteRequest $request): JsonResponse
     {
-       
+       dd($request->all());
         try {
             // Validate the incoming request data
             $validatedData = Validator::make($request->all(),[

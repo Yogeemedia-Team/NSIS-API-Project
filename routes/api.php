@@ -22,6 +22,7 @@ use App\Http\Controllers\StudentPaymentController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\YearClassGradeController;
 use App\Http\Controllers\StudentPromoteController;
+use App\Http\Controllers\StudentAdmissionController;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -91,7 +92,11 @@ Route::middleware('auth:api')->group(function () {
     Route::get('/invoice_details', [InvoiceController::class, 'invoice_details']);
     Route::post('/revice_sercharge', [InvoiceController::class, 'revice_sercharge']);
     
-    
+    // student Admition
+    Route::get('/student_admissions', [StudentAdmissionController::class, 'index']);
+    Route::get('/student_admission/{id}', [StudentAdmissionController::class, 'show']);
+    Route::post('/student_admissions/create', [StudentAdmissionController::class, 'create']);
+    Route::post('/student_admissions/update', [StudentAdmissionController::class, 'update']);
     
    
 });
