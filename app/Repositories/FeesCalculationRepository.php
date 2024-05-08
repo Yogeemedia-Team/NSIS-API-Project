@@ -213,7 +213,6 @@ private function processSurcharges($monthlyPaymentEligibleLists, $dueDate, $dueD
 
     public function user_payment_update(array $data)
     {
-        
         $current_amount = $data['payment_amount'];
         $current_user_invoice = Invoice::where('admission_no', $data['admission_id'])->whereIn('status', [0, 2])->get();
         if ( !$current_user_invoice) {
@@ -235,7 +234,8 @@ private function processSurcharges($monthlyPaymentEligibleLists, $dueDate, $dueD
             'due_date' => $current_user_invoice->first()->due_date,
             'total_due' => $data['payment_amount'],
             'status' => 1,
-            'paid_from'=> $data['paid_from']
+            'paid_from'=> $data['paid_from'],
+            'payment_reference_no' => $data['payment_reference_no'] ?? null,
         ]);
        
         foreach ($current_user_invoice as $invoice) {
