@@ -26,6 +26,8 @@ class StudentRepository implements StudentInterface, DBPreparableInterface {
         if (!empty($filter['admission_id'])) {
             $query->where('sd_admission_no', $filter['admission_id']);
         }
+        $query->join('student_monthly_fee', 'student_monthly_fee.student_id', '=', 'student_details.student_id')
+                ->where('student_monthly_fee.status', 1);
 
         return  $query->get();
 
@@ -63,13 +65,15 @@ class StudentRepository implements StudentInterface, DBPreparableInterface {
 
     public function getById($id): ?StudentDetail
     {
-       $student = StudentDetail::with('parent_data')
+       $student = StudentDetail::select('student_details.*','student_monthly_fee.monthly_fee')->with('parent_data')
         ->with('sibling_data')
         ->with('documents')
         ->with(['year_class_data' => function ($query) {
             $query->with(['grade', 'class']);
         }])
-        ->where('student_id', $id)
+        ->where('student_details.student_id', $id)
+        ->join('student_monthly_fee', 'student_monthly_fee.student_id', '=', 'student_details.student_id')
+        ->where('student_monthly_fee.status', 1)
         ->first();
 
         if (empty($student)) {
