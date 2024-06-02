@@ -21,5 +21,10 @@ class Invoice extends Model
         'current_total_outstanding'
     ];
 
+    public function accountPaybles()
+    {
+        return $this->hasMany(AccountPayable::class, 'invoice_number','invoice_number');
+    }
+
     
 }

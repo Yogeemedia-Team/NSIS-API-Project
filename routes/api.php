@@ -23,6 +23,7 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\YearClassGradeController;
 use App\Http\Controllers\StudentPromoteController;
 use App\Http\Controllers\StudentAdmissionController;
+use App\Http\Controllers\ReportController;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -102,6 +103,15 @@ Route::middleware('auth:api')->group(function () {
     Route::post('/student_extra_curricular_add', [StudentController::class, 'add_extra_curricular']);
     Route::delete('/destroy_extra_curricular/{id}', [StudentController::class, 'destroy_extra_curricular']);
     
+
+    // reports
+    Route::get('/reports/payments', [ReportController::class, 'payment_report']); 
+    Route::get('/reports/transaction', [ReportController::class, 'transaction_report']); 
+    Route::get('/reports/student_outstanding', [ReportController::class, 'outstanding_report']); 
+    Route::get('/reports/payment_delaied', [ReportController::class, 'payment_delaied_report']); 
+    Route::get('/reports/grade_class_student', [ReportController::class, 'grade_class_student_report']); 
+    Route::get('/reports/student_extra_curriculars', [ReportController::class, 'student_extra_curriculars']); 
+    Route::get('/reports/income', [ReportController::class, 'income_report']); 
    
 });
 
