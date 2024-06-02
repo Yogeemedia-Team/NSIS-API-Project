@@ -39,7 +39,10 @@ class StudentDetail extends Model
         'sd_extra_pay', 
         'sd_payment_id',
         'sd_total_due',
-        'sd_promote_started_date'
+        'sd_promote_started_date',
+        'student_queries',
+        'student_winnings'
+
     ];
 
 
@@ -89,5 +92,11 @@ class StudentDetail extends Model
     public function StudentPayment()
     {
         return $this->hasMany(StudentPayment::class, 'admission_no', 'sd_admission_no');
+    }
+
+    
+    public function studentExtraCurriculars()
+    {
+        return $this->hasMany(StudentExtraCurricular::class, 'student_id', 'student_id');
     }
 }

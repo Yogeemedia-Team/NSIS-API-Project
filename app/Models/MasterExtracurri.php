@@ -9,6 +9,7 @@ class MasterExtracurri extends Model
 {
     use HasFactory;
     protected $connection = 'core_service';
+    protected $table = 'master_extracurricular';
     protected $fillable = [
         'organization_id',
         'extracurricular_name',

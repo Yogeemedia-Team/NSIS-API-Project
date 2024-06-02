@@ -10,6 +10,7 @@ use App\Models\StudentDocument;
 use App\Models\StudentParent;
 use App\Models\StudentSibling;
 use App\Models\StudentMonthlyFee;
+use App\Models\StudentExtraCurricular;
 use Illuminate\Contracts\Pagination\Paginator;
 use Illuminate\Http\Response;
 use Illuminate\Support\Str;
@@ -71,6 +72,9 @@ class StudentRepository implements StudentInterface, DBPreparableInterface {
         ->with(['year_class_data' => function ($query) {
             $query->with(['grade', 'class']);
         }])
+        ->with(['studentExtraCurriculars' => function ($query) {
+            $query->with(['ExtraCurriculars']);
+        }])
         ->where('student_details.student_id', $id)
         ->join('student_monthly_fee', 'student_monthly_fee.student_id', '=', 'student_details.student_id')
         ->where('student_monthly_fee.status', 1)
@@ -84,42 +88,42 @@ class StudentRepository implements StudentInterface, DBPreparableInterface {
     }
 
     public function create(array $data): ?object 
-{
+    {
 
-    $data['sd_promote_started_date'] = now()->format('Y-m-d');
+        $data['sd_promote_started_date'] = now()->format('Y-m-d');
 
-    $studentDetail = StudentDetail::create($data);
-    $studentParent = StudentParent::create($data);
-   
-    $studentMonthlyFeeData = [
-        'student_id' => $data['student_id'], 
-        'sd_year_grade_class_id' => $data['sd_year_grade_class_id'],
-        'monthly_fee' => $data['monthly_fee'], 
-        'start_from' => now()->format('Y-m-d'), 
-        'status' => 1,
-    ];
-    $studentMonthlyFee =  StudentMonthlyFee::create($studentMonthlyFeeData);
-    // $studentSibling = null;
-    // if( $data['ss_data'] != null){
-        $studentSibling = StudentSibling::create($data);
-    // }
-   
-    $studentDocument = StudentDocument::create($data);
+        $studentDetail = StudentDetail::create($data);
+        $studentParent = StudentParent::create($data);
+    
+        $studentMonthlyFeeData = [
+            'student_id' => $data['student_id'], 
+            'sd_year_grade_class_id' => $data['sd_year_grade_class_id'],
+            'monthly_fee' => $data['monthly_fee'], 
+            'start_from' => now()->format('Y-m-d'), 
+            'status' => 1,
+        ];
+        $studentMonthlyFee =  StudentMonthlyFee::create($studentMonthlyFeeData);
+        // $studentSibling = null;
+        // if( $data['ss_data'] != null){
+            $studentSibling = StudentSibling::create($data);
+        // }
+    
+        $studentDocument = StudentDocument::create($data);
 
-    // Check if any of the models is null
-    if ($studentDetail === null || $studentParent === null || $studentSibling === null || $studentDocument === null) {
-        return null;
+        // Check if any of the models is null
+        if ($studentDetail === null || $studentParent === null || $studentSibling === null || $studentDocument === null) {
+            return null;
+        }
+
+        $collection = collect([
+            'studentDetail' => $studentDetail,
+            'studentParent' => $studentParent,
+            'studentSibling' => $studentSibling,
+            'studentDocument' => $studentDocument,
+        ]);
+
+        return $collection;
     }
-
-    $collection = collect([
-        'studentDetail' => $studentDetail,
-        'studentParent' => $studentParent,
-        'studentSibling' => $studentSibling,
-        'studentDocument' => $studentDocument,
-    ]);
-
-    return $collection;
-}
 
 public function update(array $data, $studentId): ?object 
 {
@@ -130,6 +134,7 @@ public function update(array $data, $studentId): ?object
     $studentSiblings = StudentSibling::where('student_id',$studentId)->first();
     $studentDocuments = StudentDocument::where('student_id',$studentId)->first();
     $studenMonthlyFee = StudentMonthlyFee::where('student_id',$studentId)->where('status',1)->first();
+   
     if($data['monthly_fee']){
         $studentMonthlyFeeData = [
             'student_id' => $studentId, 
@@ -222,6 +227,41 @@ public function update(array $data, $studentId): ?object
     }
 
 
+    public function create_extra_curricular(array $data): ?object 
+    {
+
+        $studentExtraCurricular = [
+            'student_id' => $data['student_id'], 
+            'extra_curricular_id' => $data['extra_curricular_id'],
+            'start_from' => $data['start_from'] ?? null, 
+            'end_from' => $data['end_from'] ?? null, 
+            'status' => 1,
+        ];
+
+        $studentExtraCurricularData =  StudentExtraCurricular::create($studentExtraCurricular);
+       
+
+        // Check if any of the models is null
+        if ($studentExtraCurricularData === null ) {
+            return null;
+        }
+
+       
+        return $studentExtraCurricularData;
+    }
 
 
+
+    
+    public function delete_extra_curricular(int $id): ? StudentExtraCurricular
+    {
+        $studentExtraCurricular = StudentExtraCurricular::where('id', $id)->first();
+        $deleted = $studentExtraCurricular->delete();
+
+        if (!$deleted) {
+            throw new Exception("Student Extra Curricular could not be deleted.", Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+
+        return $studentExtraCurricular;
+    }
 }

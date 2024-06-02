@@ -98,8 +98,9 @@ class StudentController extends Controller
     }
 
 
-    public function update(StudentUpdateRequest $request, $id): JsonResponse
+    public function update(Request $request, $id): JsonResponse
     {
+       
         try {
             return $this->responseSuccess($this->studentRepository->update($request->all(), $id), 'User updated successfully.');
         } catch (Exception $exception) {
@@ -116,5 +117,49 @@ class StudentController extends Controller
             return $this->responseError([], $exception->getMessage(), $exception->getCode());
         }
     }
+
+
+    
+    public function add_extra_curricular(Request $request): JsonResponse
+    {
+        try {
+            // Validate the incoming request data
+            $validatedData = Validator::make($request->all(),[
+                'student_id' => 'required|numeric',
+                'extra_curricular_id' => 'required|numeric',
+            ], 
+            [
+                'student_id.required' => 'Student is required.',
+                'extra_curricular_id.string' => 'Extra Curricular is required.',
+
+            ]);
+
+           if($validatedData->fails()){
+                return $this->responseError("validation_error", $validatedData->errors()->first(), 400);
+            }
+            
+
+            // Create the student using the validated data
+            return $this->responseSuccess($this->studentRepository->create_extra_curricular($request->all()), 'Extra Curricular created successfully.');
+        }catch (Exception $exception) {
+            // Handle other exceptions
+            return $this->responseError([], $exception->getMessage(), $exception->getCode());
+        }
+       
+    }
+
+
+    
+    public function destroy_extra_curricular($id): JsonResponse
+    {
+        try {
+            return $this->responseSuccess($this->studentRepository->delete_extra_curricular($id), 'Extra Curricular deleted successfully.');
+        } catch (Exception $exception) {
+            return $this->responseError([], $exception->getMessage(), $exception->getCode());
+        }
+    }
+
+
+    
 }
 
