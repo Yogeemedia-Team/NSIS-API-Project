@@ -249,8 +249,32 @@ public function update(array $data, $studentId): ?object
        
         return $studentExtraCurricularData;
     }
+    
 
+    public function update_extra_curricular(int $id, array $data): ?object 
+    {
+       
+       
+        try {
+            $studentExtraCurricularData = StudentExtraCurricular::findOrFail($id);
+            $studentExtraCurricular = [
+                'student_id' => $data['student_id'], 
+                'extra_curricular_id' => $data['extra_curricular_id'],
+                'start_from' => $data['start_from'] ?? null, 
+                'end_from' => $data['end_from'] ?? null, 
+                'status' => 1,
+            ];
+            // Update the student record with the provided data
+            $studentExtraCurricularData->update($studentExtraCurricular);
 
+            // Return the updated student
+            return $studentExtraCurricularData;
+        } catch (Exception $exception) {
+            // Handle the case where no student was found
+            throw new Exception("Unable to edit Student Extra Curricular.", Response::HTTP_NOT_FOUND);
+        }
+
+    }
 
     
     public function delete_extra_curricular(int $id): ? StudentExtraCurricular

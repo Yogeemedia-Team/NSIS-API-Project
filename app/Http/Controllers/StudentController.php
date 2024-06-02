@@ -148,6 +148,36 @@ class StudentController extends Controller
        
     }
 
+       
+    public function update_extra_curricular(Request $request , $id): JsonResponse
+    {
+
+        try {
+            // Validate the incoming request data
+            $validatedData = Validator::make($request->all(),[
+                'student_id' => 'required|numeric',
+                'extra_curricular_id' => 'required|numeric',
+            ], 
+            [
+                'student_id.required' => 'Student is required.',
+                'extra_curricular_id.string' => 'Extra Curricular is required.',
+
+            ]);
+
+           if($validatedData->fails()){
+                return $this->responseError("validation_error", $validatedData->errors()->first(), 400);
+            }
+            
+
+            // Create the student using the validated data
+            return $this->responseSuccess($this->studentRepository->update_extra_curricular( $id, $request->all()), 'Extra Curricular created successfully.');
+        }catch (Exception $exception) {
+            // Handle other exceptions
+            return $this->responseError([], $exception->getMessage(), $exception->getCode());
+        }
+       
+    }
+
 
     
     public function destroy_extra_curricular($id): JsonResponse

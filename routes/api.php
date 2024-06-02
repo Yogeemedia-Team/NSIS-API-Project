@@ -101,6 +101,7 @@ Route::middleware('auth:api')->group(function () {
 
     // student extra curricular
     Route::post('/student_extra_curricular_add', [StudentController::class, 'add_extra_curricular']);
+    Route::post('/student_extra_curricular_update/{id}', [StudentController::class, 'update_extra_curricular']);
     Route::delete('/destroy_extra_curricular/{id}', [StudentController::class, 'destroy_extra_curricular']);
     
 

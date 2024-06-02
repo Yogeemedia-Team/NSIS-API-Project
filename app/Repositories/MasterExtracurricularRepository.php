@@ -5,6 +5,7 @@ namespace App\Repositories;
 use Exception;
 use App\Interfaces\DBPreparableInterface;
 use App\Models\MasterExtracurri;
+use App\Models\StudentExtraCurricular;
 use App\Interfaces\MasterExtracurricularInterface ;
 use Illuminate\Http\Response;
 
@@ -72,6 +73,10 @@ class MasterExtracurricularRepository implements MasterExtracurricularInterface,
     public function delete(int $id): ?MasterExtracurri
     {
         $master_extracurricular = $this->getById($id);
+        $studentExtraCurricular = StudentExtraCurricular::where('id', $id)->first();
+        if($studentExtraCurricular){
+            throw new Exception("Extracurricular could not be deleted. Due to its already used to student extracurricular", Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
         $deleted = $master_extracurricular->delete();
 
         if (!$deleted) {
