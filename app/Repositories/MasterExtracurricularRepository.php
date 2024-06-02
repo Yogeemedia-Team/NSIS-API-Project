@@ -75,7 +75,7 @@ class MasterExtracurricularRepository implements MasterExtracurricularInterface,
         $master_extracurricular = $this->getById($id);
         $studentExtraCurricular = StudentExtraCurricular::where('extra_curricular_id', $id)->first();
         if($studentExtraCurricular){
-            throw new Exception("Extracurricular could not be deleted. Due to its already used to student extracurricular", Response::HTTP_INTERNAL_SERVER_ERROR);
+            throw new Exception("Extracurricular could not be deleted. Due to its already used as a student extracurricular", Response::HTTP_INTERNAL_SERVER_ERROR);
         }
         $deleted = $master_extracurricular->delete();
 
@@ -94,10 +94,5 @@ class MasterExtracurricularRepository implements MasterExtracurricularInterface,
 
         ];
     }
-
-    
-
-
-
 
 }
