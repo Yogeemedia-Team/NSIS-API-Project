@@ -6,7 +6,7 @@ use Illuminate\Http\Request;
 use Exception;
 use App\Http\Requests\MasterExtracurricularCreateRequest;
 use App\Http\Requests\MasterExtracurricularUpdateRequest;
-use App\Repositories\MasterClassRepository;
+use App\Repositories\MasterExtracurricularRepository;
 use App\Traits\ResponseTrait;
 use Illuminate\Http\JsonResponse;
 
@@ -16,7 +16,7 @@ class MasterExtracurricularController extends Controller
 
     public $masterextracurricularRepository;
 
-    public function __construct(MasterClassRepository $masterextracurricularRepository)
+    public function __construct(MasterExtracurricularRepository $masterextracurricularRepository)
     {
         $this->masterextracurricularRepository = $masterextracurricularRepository;
     }
