@@ -170,11 +170,17 @@ class ReportRepository implements ReportInterface{
     }
 
     public function payment_delaied_report(array $data) {
-         
-        $student = StudentDetail::select('student_details.*')->with("yearGradeClass")
-        ->join('invoices', 'invoices.admission_no', '=', 'student_details.sd_admission_no')
-        ->whereIn('invoices.status', [0, 2])
-        ->get();
+        
+        $studentQuery = StudentDetail::select('student_details.*')->with("yearGradeClass")->with([
+            'yearGradeClass.grade',
+            'yearGradeClass.class'
+        ]);
+        if(array_key_exists("sd_year_grade_class_id", $data) &&  $data['sd_year_grade_class_id'] != null ){
+            $studentQuery->where('sd_year_grade_class_id', $data['sd_year_grade_class_id']);
+        };
+        $student =  $studentQuery->join('invoices', 'invoices.admission_no', '=', 'student_details.sd_admission_no')
+                    ->whereIn('invoices.status', [0, 2])
+                    ->get();
 
         if (empty($student)) {
             throw new Exception("User student does not exist.", Response::HTTP_NOT_FOUND);
