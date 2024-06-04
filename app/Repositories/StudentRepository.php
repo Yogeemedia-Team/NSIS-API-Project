@@ -245,6 +245,9 @@ public function update(array $data, $studentId): ?object
         if ($studentExtraCurricularData === null ) {
             return null;
         }
+        $studentExtraCurricularData = StudentExtraCurricular::with("ExtraCurriculars")
+        ->where('id',$studentExtraCurricularData->id)
+        ->first();
 
        
         return $studentExtraCurricularData;
