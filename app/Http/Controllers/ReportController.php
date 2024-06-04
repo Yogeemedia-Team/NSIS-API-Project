@@ -142,7 +142,7 @@ class ReportController extends Controller {
                 'extra_curricular_id' => 'required',
             ], 
             [
-                'extra_curricular_id.required' => 'Extra Curricular_id is required.',
+                'extra_curricular_id.required' => 'Extra Curricular  is required.',
             ]);
 
            if($validatedData->fails()){
@@ -150,7 +150,7 @@ class ReportController extends Controller {
             }
             return $this->responseSuccess(
                 $this->reportRepository->student_extra_curriculars($request->all()),
-                'Students fetch successfully.'
+                'Income report fetch successfully.'
             );
         } catch (Exception $exception) {
             return $this->responseError([], $exception->getMessage(), $exception->getCode());

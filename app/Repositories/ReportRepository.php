@@ -214,7 +214,12 @@ class ReportRepository implements ReportInterface{
         }
 
         // Use the list of YearGradeClass IDs to query the StudentDetail model
-        $students = StudentDetail::whereIn('sd_year_grade_class_id', $studentYear)->get();
+        $students = StudentDetail::with("yearGradeClass")
+                                    ->with([
+                                        'yearGradeClass.grade',
+                                        'yearGradeClass.class'
+                                    ])
+                                    ->whereIn('sd_year_grade_class_id', $studentYear)->get();
 
         if (empty($students)) {
             throw new Exception("User student does not exist.", Response::HTTP_NOT_FOUND);
@@ -243,7 +248,12 @@ class ReportRepository implements ReportInterface{
         }
 
         // Use the list of YearGradeClass IDs to query the StudentDetail model
-        $students = StudentDetail::whereIn('student_id', $CurricularstudentIds)->get();
+        $students = StudentDetail::with("yearGradeClass")
+                        ->with([
+                            'yearGradeClass.grade',
+                            'yearGradeClass.class'
+                        ])
+                        ->whereIn('student_id', $CurricularstudentIds)->get();
 
         if (empty($students)) {
             throw new Exception("Student not found.", Response::HTTP_NOT_FOUND);
