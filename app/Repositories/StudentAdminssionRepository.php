@@ -53,7 +53,7 @@ class StudentAdminssionRepository implements StudentAdminssionInterface {
                 'status' => 0,
             ]);
 
-            $isAllpaymentDone = false; 
+            $isAllpaymentDone = true; 
             $admissionInstalmentList = [];
             foreach ($data['admission_instalments'] as $key => $value) {
                 $admissionInstalment = AdmissionInstalment::create([
@@ -67,8 +67,8 @@ class StudentAdminssionRepository implements StudentAdminssionInterface {
                     'status' => $value['status'],
                 ]);
 
-                if($value['status'] == 1){
-                    $isAllpaymentDone = true;
+                if($value['status'] == 0){
+                    $isAllpaymentDone = false;
                 }
                 array_push($admissionInstalmentList, $admissionInstalment);
             }
